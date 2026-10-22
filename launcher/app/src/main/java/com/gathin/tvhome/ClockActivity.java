@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import com.gathin.tvhome.clock.ClockScene;
 
 /**
  * The clock screensaver shown by Home itself after home_idle_clock_minutes without input. Some TVs' own

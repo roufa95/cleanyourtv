@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bin calendar: Log. White, tinted with the bin's colour in code. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M6,7h12a5,5 0 0 1 0,10H6a5,5 0 0 1 0,-10z M18,9.6a2.4,2.4 0 1 0 0.01,0z M3,11.2h9v1.6H3z" />
+</vector>

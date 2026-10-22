@@ -1,6 +1,7 @@
 package com.gathin.tvhome;
 
 import android.service.dreams.DreamService;
+import com.gathin.tvhome.clock.ClockScene;
 
 /**
  * Screensaver: the launcher's thin clock and date on black, over a slow ambient glow (ClockScene).

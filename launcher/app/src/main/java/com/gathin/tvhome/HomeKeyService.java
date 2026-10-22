@@ -15,6 +15,10 @@ import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.Toast;
 
+import com.gathin.tvhome.util.Config;
+import com.gathin.tvhome.util.RemoteKeys;
+import com.gathin.tvhome.util.ServiceRepair;
+import com.gathin.tvhome.util.SystemSettings;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;

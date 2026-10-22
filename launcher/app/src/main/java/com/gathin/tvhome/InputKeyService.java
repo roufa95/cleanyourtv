@@ -5,6 +5,9 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
+import com.gathin.tvhome.util.Config;
+import com.gathin.tvhome.util.RemoteKeys;
+import com.gathin.tvhome.util.ServiceRepair;
 import java.util.Collections;
 import java.util.Map;
 

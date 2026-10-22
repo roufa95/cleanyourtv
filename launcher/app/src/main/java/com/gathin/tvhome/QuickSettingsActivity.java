@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.gathin.tvhome.util.SystemSettings;
 
 /**
  * The panel the remote's Settings button opens when {@code settings_key_panel} is on (HomeKeyService):

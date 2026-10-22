@@ -22,7 +22,7 @@
     <string name="cant_open">Can\'t open %1$s</string>
     <string name="date_format">EEEE  d MMMM</string>
     <!-- Date next to the clock on Home; a locale can split it over two lines with \n. -->
-    <string name="date_format_home" translatable="false">@string/date_format</string>
+    <string name="date_format_home" translatable="false">EEEE\nd MMMM</string>
     <string name="shamsi_month_farvardin">Farvardin</string>
     <string name="shamsi_month_ordibehesht">Ordibehesht</string>
     <string name="shamsi_month_khordad">Khordad</string>
@@ -142,6 +142,61 @@
     <string name="race_countdown_minutes">%1$d min</string>
     <string name="race_countdown_hours">%1$dh %2$dm</string>
     <string name="race_countdown_days">%1$dd %2$dh</string>
+    <string name="waste_kicker">Bin collection · %1$s</string>
+    <string name="waste_today">Today</string>
+    <string name="waste_tomorrow">Tomorrow</string>
+    <string name="waste_put_out_tonight">Put out tonight</string>
+    <string name="waste_in_days">in %1$d days</string>
+    <string name="waste_household">Household</string>
+    <string name="waste_bio">Bio</string>
+    <string name="waste_valorlux">Valorlux</string>
+    <string name="waste_paper">Paper</string>
+    <string name="waste_glass">Glass</string>
+    <string name="waste_bulky">Bulky waste</string>
+    <string name="waste_electronics">Electronics</string>
+    <string name="waste_sdk">SuperDrecksKëscht</string>
+    <string name="waste_green">Garden waste</string>
+    <string name="waste_trees">Christmas trees</string>
+    <string name="waste_wood">Old wood</string>
+    <string name="weather_clear">Clear</string>
+    <string name="weather_mainly_clear">Mostly clear</string>
+    <string name="weather_partly_cloudy">Partly cloudy</string>
+    <string name="weather_cloudy">Cloudy</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_drizzle">Drizzle</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_showers">Showers</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_thunder">Thunderstorm</string>
+    <string name="weather_high_low">H:%1$s  L:%2$s</string>
+    <string name="weather_now">Now</string>
+    <string name="season_halloween">Happy Halloween</string>
+    <string name="season_christmas">Merry Christmas</string>
+    <string name="season_new_year">Happy New Year</string>
+    <string name="season_carnival">Happy Fuesend</string>
+    <string name="season_ramadan">Ramadan Mubarak</string>
+    <string name="season_eid">Eid Mubarak</string>
+    <string name="weather_rain_from">Rain from %1$s</string>
+    <string name="weather_snow_from">Snow from %1$s</string>
+    <string name="stats">Stats</string>
+    <string name="stats_loading">Reading usage…</string>
+    <string name="stats_panel_memory">Memory</string>
+    <string name="stats_memory_used">%1$s used of %2$s</string>
+    <string name="stats_panel_storage">%1$s free of %2$s storage</string>
+    <string name="stats_data">Data used</string>
+    <string name="stats_today">today</string>
+    <string name="stats_month">this month</string>
+    <string name="stats_last_week">last 7 days</string>
+    <string name="stats_energy">Energy (estimate)</string>
+    <string name="stats_screen_on_today">screen on today</string>
+    <string name="stats_screen_on_month">screen on this month</string>
+    <string name="stats_energy_note">At %1$d W while the screen is on; the TV has no power meter.</string>
+    <string name="stats_no_access">Needs usage access for the launcher (see the README).</string>
+    <string name="forecast_title">Next %1$d days</string>
+    <string name="holiday_today">%1$s today</string>
+    <string name="holiday_tomorrow">%1$s tomorrow</string>
+    <string name="holiday_in">%1$s in %2$d days</string>
+    <string name="holiday_until">%1$s until %2$s</string>
     <!-- Cinematic top shelf (cinematic_home): the line under the focused dock app's name; %1$s is when it was
          last opened, e.g. "5 minutes ago" or "yesterday, 9:40 pm". -->
     <string name="last_opened">Last opened %1$s</string>

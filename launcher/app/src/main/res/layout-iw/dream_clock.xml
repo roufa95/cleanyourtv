@@ -5,6 +5,22 @@
     android:layout_height="match_parent"
     android:background="#FF000000">
 
+    <!-- One of the theme's wallpapers (see ClockScene), under a shade so the clock stays readable. -->
+    <ImageView
+        android:id="@+id/dreamWallpaper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/dreamShade"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#66000000"
+        android:visibility="gone" />
+
     <View
         android:id="@+id/dreamAmbient"
         android:layout_width="match_parent"
@@ -65,5 +81,46 @@
             android:fontFamily="@string/font_regular"
             android:letterSpacing="0.14"
             android:textAllCaps="true" />
+
+        <TextView
+            android:id="@+id/dreamWeather"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="14dp"
+            android:textColor="#D9FFFFFF"
+            android:textSize="20sp"
+            android:fontFamily="@font/outfit_regular"
+            android:visibility="gone" />
+
+        <!-- The evening before a bin collection: the same reminder as the bin card. -->
+        <TextView
+            android:id="@+id/dreamBins"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/waste_panel_alert"
+            android:paddingStart="16dp"
+            android:paddingEnd="18dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:textColor="#FFFAC775"
+            android:textSize="16sp"
+            android:fontFamily="@font/outfit_medium"
+            android:visibility="gone" />
     </LinearLayout>
+
+    <!-- The photographer's credit while a downloaded photo (see PhotoFetch) is the picture. -->
+    <TextView
+        android:id="@+id/dreamCredit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|left"
+        android:layout_margin="10dp"
+        android:textColor="#80FFFFFF"
+        android:textSize="10sp"
+        android:fontFamily="@font/outfit_medium"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
 </FrameLayout>

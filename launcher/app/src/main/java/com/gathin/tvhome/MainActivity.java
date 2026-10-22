@@ -15,7 +15,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ChangedPackages;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -40,11 +39,8 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -77,8 +73,42 @@ import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.gathin.tvhome.calendar.Festival;
+import com.gathin.tvhome.calendar.RacePanel;
+import com.gathin.tvhome.calendar.Season;
+import com.gathin.tvhome.calendar.Shamsi;
+import com.gathin.tvhome.cards.CardFeature;
+import com.gathin.tvhome.cards.Cards;
+import com.gathin.tvhome.decor.BellDrawable;
+import com.gathin.tvhome.decor.DecorationView;
+import com.gathin.tvhome.decor.DiyaDrawable;
+import com.gathin.tvhome.decor.DockDecoration;
+import com.gathin.tvhome.decor.MarigoldDrawable;
+import com.gathin.tvhome.decor.PetalShowerView;
+import com.gathin.tvhome.decor.SeasonShowerView;
+import com.gathin.tvhome.home.AppAdapter;
+import com.gathin.tvhome.home.AppLibraryDialog;
+import com.gathin.tvhome.home.DockSlots;
+import com.gathin.tvhome.home.GridNavigation;
+import com.gathin.tvhome.home.LastOpened;
+import com.gathin.tvhome.home.LibraryApps;
+import com.gathin.tvhome.home.Order;
+import com.gathin.tvhome.home.TileRefresh;
+import com.gathin.tvhome.stats.SystemStatsLine;
+import com.gathin.tvhome.util.Config;
+import com.gathin.tvhome.util.CoocaaSources;
+import com.gathin.tvhome.util.GlassView;
+import com.gathin.tvhome.util.Motion;
+import com.gathin.tvhome.util.ServiceRepair;
+import com.gathin.tvhome.util.SystemSettings;
+import com.gathin.tvhome.util.VpnBadge;
+import com.gathin.tvhome.wallpaper.HeroArt;
+import com.gathin.tvhome.wallpaper.PhotoFetch;
+import com.gathin.tvhome.wallpaper.WallpaperPlayer;
+import com.gathin.tvhome.waste.WastePanel;
+import com.gathin.tvhome.weather.SkyView;
+import com.gathin.tvhome.weather.WeatherCards;
 import java.io.File;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -104,7 +134,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     static int COLUMNS = 4;
     private boolean rtlAppGrid;
     private static final long MINUTE_MS = 60_000L;
-    private static final long STATS_MS = 10_000L;
     /**
      * 2025-01-01. TVs without a clock battery boot at the epoch (08:00 in China) and keep it until network
      * time arrives; the clock, date and greeting stay hidden before then.
@@ -164,7 +193,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean advancedEffects;
     private TextView greeting;
     private View clockBlock;
-    private View btnInputs;
+    private View btnInputs, btnStats;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
     private TextView btnWifi;
@@ -173,12 +202,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** The pills have been filled in once; later resumes refresh them after the first frame. */
     private boolean pillsShown;
     private TextView shamsiDate;
-    private TextView stats;
-    private List<RaceWeekend.Race> raceCalendar;
-    private View racePanel;
-    private TextView raceKicker, raceHeadline, raceSessions;
-    /** config.xml show_stats, overridable by a theme. Off: the line is gone and nothing is read. */
-    private boolean showStats;
+    private SystemStatsLine systemStats;
+    private RacePanel racePanel;
+    private WastePanel wastePanel;
+    /** The weather cards, or null while config.xml weather is off. */
+    private WeatherCards weatherCards;
+    /** Scrolled away over this distance, the cards have faded out under the clock. */
+    private static final float CARD_FADE_DP = 60f;
+    private View[] homeCards = new View[0];
+    private DecorationView decorations;
     private boolean shamsi;
     /** greeting_name: said after the greeting, which is shown in capitals. */
     private String greetingName = "";
@@ -214,6 +246,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** Festive skin from the theme (see Festival); applied while it is active today. */
     private Festival festival = Festival.NONE;
     private boolean festive;
+    /** Holiday theme by date (see Season), or null; a theme's festival takes precedence. */
+    private Season season;
+    private String seasonSetting = "auto";
+    /** The day the holiday effect last played, so it greets the first Home of each day only. */
+    private static LocalDate lastSeasonShower;
+    /** Owner's Unsplash key for the daily photo (see PhotoFetch), or "". */
+    private String unsplashKey = "";
+    private TextView wallpaperCredit;
+    /** A new daily photo arrived while Home was open: rebuild the collection the next time Home shows. */
+    private static boolean photosChanged;
     private DiyaDrawable diya;
     private BellDrawable bell;
     private MarigoldDrawable marigold;
@@ -331,7 +373,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         @Override
         public void run() {
             updateGreeting();
-            updateRace();
+            updateCards();
             // The pill follows the network callbacks and each return to Home; only the diya's flame follows the
             // signal level, so only it needs this minute's binder calls (about 7 ms on the UI thread).
             if (festive) updateWifiLabel();
@@ -363,6 +405,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         focusOvershoot = cfg.focusOvershoot;
         festival = cfg.festival;
         festive = festival.active(LocalDate.now());
+        seasonSetting = cfg.season;
+        season = festive ? null : Season.pick(seasonSetting, LocalDate.now());
         liveTvPkg = cfg.liveTvPackage;
         idleClockMs = cfg.homeIdleClockMinutes * MINUTE_MS;
         bootToLiveTv = cfg.bootToLiveTv;
@@ -384,10 +428,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // the theme's background, so launch looks the same.
         getWindow().setBackgroundDrawable(null);
         wallpaperPlayer = new WallpaperPlayer(this, root, cfg);
+        unsplashKey = cfg.wallpaperEnabled ? cfg.unsplashKey : "";
+        wallpaperCredit = findViewById(R.id.wallpaperCredit);
+        wallpaperPlayer.setOnShown(this::updateWallpaperCredit);
+        updateWallpaperCredit();
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
         glass = findViewById(R.id.glass);
-        if (festive) glass.setAccent(festival.accentColor());
+        if (festiveAccent() != 0) glass.setAccent(festiveAccent());
         ambient = findViewById(R.id.ambient);
         // The glow is one bitmap, so its alpha can be applied while drawing it. Otherwise every frame of
         // a fade renders it into a full-screen offscreen buffer first.
@@ -425,13 +473,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         btnWifi = findViewById(R.id.btnWifi);
         shamsiDate = findViewById(R.id.shamsiDate);
-        stats = findViewById(R.id.stats);
-        raceCalendar = cfg.raceCalendar;
-        racePanel = findViewById(R.id.racePanel);
-        raceKicker = findViewById(R.id.raceKicker);
-        raceHeadline = findViewById(R.id.raceHeadline);
-        raceSessions = findViewById(R.id.raceSessions);
-        showStats = cfg.showStats;
+        systemStats = new SystemStatsLine(this, findViewById(R.id.stats), handler, cfg.showStats);
+        racePanel = new RacePanel(this, cfg.raceCalendar);
+        wastePanel = new WastePanel(this, cfg.wasteCommune, cfg.wasteLocality, cfg.wasteStreet);
+        if (cfg.weather) {
+            weatherCards = new WeatherCards(this,
+                    new Config.WeatherCard(cfg.weatherPlace, cfg.latitude, cfg.longitude, cfg.holidaysCountry));
+        }
         shamsi = cfg.shamsiDate;
         greetingName = cfg.greetingName;
         if (shamsi) {
@@ -500,7 +548,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             public void onChildViewDetachedFromWindow(@NonNull View v) {
             }
         });
-        if (dockRow) grid.addItemDecoration(new DockDecoration(COLUMNS, density, cinematic, cfg.alwaysShowNames, cfg.dockOpacity, cfg.dockGlass, cfg.dockEvenPadding));
+        if (dockRow) grid.addItemDecoration(new DockDecoration(COLUMNS, density, cinematic, cfg.alwaysShowNames, cfg.dockOpacity, cfg.dockGlass, cfg.dockEvenPadding, cfg.dockBand));
         // Reduced motion: the tiles are simply there, with no entrance (reloadApps skips it there too).
         if (animations && !reducedMotion) {
             grid.setLayoutAnimation(new LayoutAnimationController(
@@ -539,6 +587,28 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // Cold start or column count > 4: the first focus can run before the grid has its final width or
             // padding, leaving the glass at the XML design size until a key is pressed.
             grid.post(this::refitGlass);
+        });
+
+        // The Home cards scroll up with the grid instead of staying behind it, fading as they reach the clock.
+        homeCards = new View[]{findViewById(R.id.wastePanel), findViewById(R.id.weatherCard),
+                findViewById(R.id.forecastCard), racePanel.view()};
+        // The holiday's decorations on the card and dock edges, over everything but taking no focus.
+        if (season != null) {
+            decorations = new DecorationView(this, season, new View[]{homeCards[0], homeCards[1], homeCards[2]},
+                    new View[]{findViewById(R.id.btnInputs), findViewById(R.id.btnWifi), findViewById(R.id.btnSettings)}, grid, COLUMNS);
+            root.addView(decorations, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        }
+        grid.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                float offset = rv.computeVerticalScrollOffset();
+                float alpha = Math.max(0f, 1f - offset / (CARD_FADE_DP * density));
+                for (View card : homeCards) {
+                    card.setTranslationY(-offset);
+                    card.setAlpha(alpha);
+                }
+            }
         });
 
         // Keep the glass glued to its tile while the grid scrolls.
@@ -580,6 +650,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnInputs = findViewById(R.id.btnInputs);
         View btnSettings = findViewById(R.id.btnSettings);
         btnInputs.setOnClickListener(v -> showInputs());
+        btnStats = findViewById(R.id.btnStats);
+        btnStats.setVisibility(getResources().getBoolean(R.bool.stats_button) ? View.VISIBLE : View.GONE);
+        btnStats.setOnClickListener(v -> open(new Intent(this, StatsActivity.class)));
         btnWifi.setOnClickListener(v -> openNetworkPill());
         btnWifi.setOnLongClickListener(v -> {
             open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
@@ -649,19 +722,21 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 focusTile(lastFocused % COLUMNS);
                 return true;
             }
-            int firstButton = btnInputs.getVisibility() == View.VISIBLE ? R.id.btnInputs : firstTopButton().getId();
+            int firstButton = btnStats.getVisibility() == View.VISIBLE ? R.id.btnStats
+                    : btnInputs.getVisibility() == View.VISIBLE ? R.id.btnInputs : firstTopButton().getId();
             int leftButton = rtlMenuBar ? R.id.btnSettings : firstButton;
             int rightButton = rtlMenuBar ? firstButton : R.id.btnSettings;
             if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) return v.getId() == leftButton;
             return keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && v.getId() == rightButton;
         };
         btnInputs.setOnKeyListener(pillKeys);
+        btnStats.setOnKeyListener(pillKeys);
         btnWifi.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            for (View button : new View[]{btnInputs, btnWifi, btnReorder, btnLibraryTop, btnSettings}) {
+            for (View button : new View[]{btnStats, btnInputs, btnWifi, btnReorder, btnLibraryTop, btnSettings}) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
                         .scaleX(focused ? 1.04f : 1f).scaleY(focused ? 1.04f : 1f)
                         .setDuration(reducedMotion ? Motion.REDUCED_MS : 160).start());
@@ -793,7 +868,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onResume() {
         super.onResume();
         // A festival that started or ended while Home was in the background: rebuild with or without it.
-        if (festive != festival.active(LocalDate.now())) {
+        if (photosChanged || festive != festival.active(LocalDate.now())
+                || (!festive && season != Season.pick(seasonSetting, LocalDate.now()))) {
+            photosChanged = false;
             recreate();
             return;
         }
@@ -822,7 +899,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (openLiveTvAfterBoot()) return;
         updateGreeting();
-        updateRace();
+        updateCards();
+        wastePanel.refreshIfDue(this::updateWaste);
+        if (!unsplashKey.isEmpty()) {
+            PhotoFetch.refreshIfDue(this, unsplashKey, Season.pick(seasonSetting, LocalDate.now()), () -> photosChanged = true);
+        }
         // The network and Inputs pills keep their state while Home is in the background, and callbacks update them
         // when the network or the inputs change, so this refresh only catches anything missed. Its binder calls
         // (about 7 ms on a TCL C755, most of it WifiManager.getConnectionInfo) would hold up the first frame back
@@ -834,10 +915,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             updateInputsButton();
             pillsShown = true;
         }
-        if (showStats) startStats();
+        systemStats.start();
         sky.update();
         wallpaperPlayer.start();
+        if (decorations != null) decorations.start();
         handler.postDelayed(minuteTick, MINUTE_MS);
+        if (season != null && !reducedMotion && !LocalDate.now().equals(lastSeasonShower)) {
+            lastSeasonShower = LocalDate.now();
+            handler.postDelayed(this::playSeasonShower, 450);
+        }
         if (festive && diya != null) {
             diya.start();
             LocalDate today = LocalDate.now();
@@ -1006,12 +1092,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         root.removeCallbacks(showIdleClock);
         endReorder();   // Home or another app while reordering keeps the order so far
         wallpaperPlayer.stop();
+        if (decorations != null) decorations.stop();
         stopAmbientAnimation();
         hero.animate().cancel();
         ambient.animate().cancel();
         heroArt.animate().cancel();
         handler.removeCallbacks(minuteTick);
-        stopStats();
+        systemStats.stop();
         if (diya != null) diya.stop();
         cancelPendingFocusScroll();
         // Nothing of ours stays on screen over another app; an undecided prompt simply returns next time.
@@ -1331,7 +1418,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         drop();
         reordering = false;
         adapter.setReordering(false);
-        glass.setAccent(festive ? festival.accentColor() : 0);
+        glass.setAccent(festiveAccent());
         btnReorder.setActivated(false);
         List<String> keys = adapter.movableKeys();
         List<String> before = orderAtStart;
@@ -1861,195 +1948,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         else glass.setAlpha(0f);
     }
 
-    // ---- optional system stats (config.xml show_stats) --------------------------------------------
-
-    /** Background reader. Started only while Home is resumed and show_stats is on. */
-    private HandlerThread statsThread;
-    /** The current run's handler; a run whose handler is no longer this one stops (volatile: read off-thread). */
-    private volatile Handler statsBg;
-
-    private void startStats() {
-        if (statsThread != null) return;
-        stats.setVisibility(View.VISIBLE);
-        cpuTotalPrev = -1;
-        idlePrev = -1;
-        procStatDead = false;
-        statsThread = new HandlerThread("stats");
-        statsThread.start();
-        // Each start gets its own handler, held by its task: stopStats on the main thread can clear the field
-        // at any moment without the reader tripping over it.
-        Handler bg = new Handler(statsThread.getLooper());
-        statsBg = bg;
-        bg.post(new Runnable() {
-            @Override
-            public void run() {
-                if (statsBg != bg) return;
-                String line = readStatsLine();
-                handler.post(() -> {
-                    if (showStats && stats != null && statsBg == bg) stats.setText(line);
-                });
-                if (statsBg == bg) bg.postDelayed(this, STATS_MS);
-            }
-        });
-    }
-
-    private void stopStats() {
-        if (statsThread == null) return;
-        statsBg.removeCallbacksAndMessages(null);
-        statsThread.quit();
-        statsThread = null;
-        statsBg = null;
-        // Paused (the quick panel or an app on top): keep the last line on screen. Taking it away moved the grid up
-        // under a glass highlight that stayed put.
-        if (!showStats) stats.setVisibility(View.GONE);
-    }
-
-    /** One quiet line, e.g. "CPU 8%  ·  Memory 430 MB free  ·  Storage 3.1 GB free". Runs off the main thread. */
-    private static void appendStat(StringBuilder line, String part) {
-        if (line.length() > 0) line.append("  ·  ");
-        line.append(part);
-    }
-
-    private String readStatsLine() {
-        int cpu = cpuPercent();
-        if (cpu < 0) {
-            try {
-                Thread.sleep(200);             // second sample, so the first line already has a CPU figure
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return "";
-            }
-            cpu = cpuPercent();
-        }
-        // Android 8 and later hide /proc/stat from apps on many TVs: then the line leaves CPU out rather than
-        // showing a dash that never fills in.
-        StringBuilder line = new StringBuilder();
-        if (cpu >= 0) line.append(getString(R.string.stats_cpu, cpu));
-        long[] mem = memUsedOfTotalMb();
-        if (mem != null) appendStat(line, getString(R.string.stats_memory, mem[0], mem[1]));
-        String free = formatGb(getResources(), Environment.getDataDirectory().getFreeSpace());
-        if (!free.isEmpty()) appendStat(line, getString(R.string.stats_storage, free));
-        return StatsText.forLocale(line.toString(), getResources().getConfiguration().getLocales().get(0));
-    }
-
-    // -1: need another sample. -2: this source cannot be read (Android 9 hides /proc/stat from apps).
-    private static final int CPU_UNREADABLE = -2;
-    private long cpuTotalPrev = -1, cpuIdlePrev = -1;
-    private boolean procStatDead;
-    private long idlePrev = -1, wallPrev = -1;
-
-    private int cpuPercent() {
-        if (!procStatDead) {
-            int fromStat = cpuFromProcStat();
-            if (fromStat != CPU_UNREADABLE) return fromStat;
-            procStatDead = true;
-            idlePrev = -1;
-        }
-        return cpuFromIdle();
-    }
-
-    private int cpuFromProcStat() {
-        String s = readFirstLine("/proc/stat");
-        if (s == null || !s.startsWith("cpu")) return CPU_UNREADABLE;
-        String[] t = s.trim().split("\\s+");
-        if (t.length < 5) return CPU_UNREADABLE;
-        try {
-            long user = Long.parseLong(t[1]), nice = Long.parseLong(t[2]), sys = Long.parseLong(t[3]);
-            long idle = Long.parseLong(t[4]);
-            long iowait = t.length > 5 ? Long.parseLong(t[5]) : 0;
-            long irq = t.length > 6 ? Long.parseLong(t[6]) : 0;
-            long soft = t.length > 7 ? Long.parseLong(t[7]) : 0;
-            long total = user + nice + sys + idle + iowait + irq + soft;
-            long idleAll = idle + iowait;
-            if (cpuTotalPrev < 0) {
-                cpuTotalPrev = total;
-                cpuIdlePrev = idleAll;
-                return -1;
-            }
-            long dt = total - cpuTotalPrev, di = idleAll - cpuIdlePrev;
-            cpuTotalPrev = total;
-            cpuIdlePrev = idleAll;
-            if (dt <= 0) return -1;
-            int busy = (int) Math.round((dt - di) * 100.0 / dt);
-            return Math.max(0, Math.min(100, busy));
-        } catch (NumberFormatException e) {
-            return CPU_UNREADABLE;
-        }
-    }
-
-    /** Busy percent from cpuidle time (microseconds) across the cores. -1 until the second sample. */
-    private int cpuFromIdle() {
-        long idle = 0;
-        int cores = 0;
-        for (int i = 0; i < 8; i++) {
-            boolean any = false;
-            for (int state = 0; state < 8; state++) {
-                String t = readFirstLine("/sys/devices/system/cpu/cpu" + i
-                        + "/cpuidle/state" + state + "/time");
-                if (t == null) break;
-                try {
-                    idle += Long.parseLong(t.trim());
-                    any = true;
-                } catch (NumberFormatException e) {
-                    break;
-                }
-            }
-            if (!any) break;
-            cores++;
-        }
-        if (cores == 0) return -1;
-        long wall = SystemClock.elapsedRealtime() * 1000L;
-        if (idlePrev < 0) {
-            idlePrev = idle;
-            wallPrev = wall;
-            return -1;
-        }
-        long di = idle - idlePrev;
-        long dw = (wall - wallPrev) * cores;
-        idlePrev = idle;
-        wallPrev = wall;
-        if (dw <= 0) return -1;
-        int busy = (int) Math.round((dw - di) * 100.0 / dw);
-        return Math.max(0, Math.min(100, busy));
-    }
-
-    /** RAM usage as {used, total} in MB, used = MemTotal - MemAvailable, e.g. "945 / 1536 MB". Used over
-     *  free so the line reads as a load against a known whole; null when /proc/meminfo cannot be read. */
-    private long[] memUsedOfTotalMb() {
-        long available = -1, total = -1;
-        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader("/proc/meminfo"))) {
-            String line;
-            String[] t;
-            while ((line = r.readLine()) != null) {
-                if (line.startsWith("MemAvailable:")) {
-                    t = line.split("\\s+");
-                    if (t.length >= 2) available = Long.parseLong(t[1]) / 1024;
-                } else if (line.startsWith("MemTotal:")) {
-                    t = line.split("\\s+");
-                    if (t.length >= 2) total = Long.parseLong(t[1]) / 1024;
-                }
-            }
-        } catch (IOException | NumberFormatException ignored) {
-        }
-        if (available < 0 || total <= 0) return null;
-        return new long[]{Math.max(0, total - available), total};
-    }
-
-    private static String readFirstLine(String path) {
-        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader(path))) {
-            return r.readLine();
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    private static String formatGb(Resources res, long bytes) {
-        if (bytes <= 0) return "";
-        double gb = bytes / (1024.0 * 1024 * 1024);
-        return gb >= 10 ? res.getString(R.string.storage_gb_whole, gb)
-                : res.getString(R.string.storage_gb_decimal, gb);
-    }
-
     // ---- navigation ------------------------------------------------------------------------------
 
     @Override
@@ -2194,6 +2092,23 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         grid.smoothScrollToPosition(pos);
     }
 
+    // ---- Home cards: race weekend, bins, weather ---------------------------------------------------
+
+    /** Every Home card for this minute; the weather feeds download only when overdue. */
+    private void updateCards() {
+        racePanel.update();
+        updateWaste();
+        if (weatherCards != null) {
+            weatherCards.refreshFeeds();
+            weatherCards.update();
+        }
+    }
+
+    /** The bin card gives way to the race-weekend panel. */
+    private void updateWaste() {
+        wastePanel.update(racePanel.isShown());
+    }
+
     // ---- top bar ---------------------------------------------------------------------------------
 
     /** Some TVs (Coocaa OS) set the network time without ACTION_TIME_CHANGED, so keep checking until it is valid. */
@@ -2229,71 +2144,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             else if (hour < 22) res = R.string.good_evening;
             else res = R.string.good_night;
         }
-        String festiveGreeting = festive ? festival.greetingText(getResources()) : "";
+        String festiveGreeting = festive ? festival.greetingText(getResources()) : season != null ? seasonGreeting(season) : "";
         if (!festiveGreeting.isEmpty()) {
             greeting.setText(festiveGreeting);
-            greeting.setTextColor(liftTowardsWhite(festival.accentColor(), 0.25f));
+            greeting.setTextColor(liftTowardsWhite(festiveAccent(), 0.25f));
         } else {
             greeting.setText(greetingName.isEmpty() ? getString(res)
                     : getString(R.string.greeting_with_name, getString(res), greetingName));
             greeting.setTextColor(greetingColor);
         }
         if (shamsi) shamsiDate.setText(Shamsi.today(getResources()));
-    }
-
-    // ---- race-weekend panel (a theme's race_calendar) -----------------------------------------------
-
-    private static final int RACE_RED = 0xFFFF3B2F;
-
-    /**
-     * Shows or hides the race-weekend panel for this minute. Text only, set once a minute with the clock:
-     * nothing animates, so the panel costs the GPU nothing between ticks.
-     */
-    private void updateRace() {
-        if (raceCalendar.isEmpty()) return;
-        RaceWeekend.State s = RaceWeekend.at(raceCalendar, java.time.Instant.now());
-        if (s == null) {
-            racePanel.setVisibility(View.GONE);
-            return;
-        }
-        RaceWeekend.Race race = s.race;
-        raceKicker.setText(race.place.isEmpty()
-                ? getString(R.string.race_kicker_no_place, race.round, race.shortName())
-                : getString(R.string.race_kicker, race.round, race.shortName(), race.place));
-
-        if (s.live != null) {
-            SpannableString live = new SpannableString("\u25CF  " + getString(R.string.race_live, s.live.title(getResources())));
-            live.setSpan(new android.text.style.ForegroundColorSpan(RACE_RED), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            raceHeadline.setText(live);
-        } else if (s.next != null) {
-            String in = RaceWeekend.countdown(getResources(), s.untilNext);
-            raceHeadline.setText(s.next.isRace() ? getString(R.string.race_lights_out, in)
-                    : getString(R.string.race_next, s.next.title(getResources()), in));
-        } else {
-            raceHeadline.setText(R.string.race_finished);
-        }
-
-        // FP1 FRI 11:00 PM   FP2 SAT 2:30 AM ...: done sessions fade, the live one is red, the next one bright.
-        java.time.format.DateTimeFormatter when = java.time.format.DateTimeFormatter.ofPattern(
-                android.text.format.DateFormat.is24HourFormat(this) ? "EEE HH:mm" : "EEE h:mm a", Locale.getDefault())
-                .withZone(java.time.ZoneId.systemDefault());
-        android.text.SpannableStringBuilder row = new android.text.SpannableStringBuilder();
-        for (int i = 0; i < race.sessions.size(); i++) {
-            RaceWeekend.Session session = race.sessions.get(i);
-            if (i > 0) row.append("     ");
-            int start = row.length();
-            row.append(session.shortName(getResources())).append("  ").append(when.format(session.start).toUpperCase(Locale.getDefault()));
-            int color;
-            switch (s.statuses.get(i)) {
-                case DONE: color = 0x47FFFFFF; break;
-                case LIVE: color = RACE_RED; break;
-                case NEXT: color = 0xFFFFFFFF; break;
-                default: color = 0x99FFFFFF;
-            }
-            row.setSpan(new android.text.style.ForegroundColorSpan(color), start, row.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-        raceSessions.setText(row);
-        racePanel.setVisibility(View.VISIBLE);
     }
 
     private void refreshPillsAfterNextDraw() {
@@ -2461,6 +2321,38 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         root.addView(shower, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         shower.play(60, 2200, () -> root.removeView(shower));
+    }
+
+    /** The theme festival's colour, else the holiday season's, else 0 for the normal glow. */
+    private int festiveAccent() {
+        return festive ? festival.accentColor() : season != null ? season.accent : 0;
+    }
+
+    private String seasonGreeting(Season s) {
+        switch (s) {
+            case HALLOWEEN: return getString(R.string.season_halloween);
+            case CHRISTMAS: return getString(R.string.season_christmas);
+            case NEW_YEAR: return getString(R.string.season_new_year);
+            case CARNIVAL: return getString(R.string.season_carnival);
+            case RAMADAN: return getString(R.string.season_ramadan);
+            default: return getString(R.string.season_eid);
+        }
+    }
+
+    /** "Photo: name / Unsplash" under a downloaded photo; nothing under the theme's drawn scenes. */
+    private void updateWallpaperCredit() {
+        java.io.File shown = wallpaperPlayer.shown();
+        String credit = shown == null ? null : PhotoFetch.credit(shown);
+        wallpaperCredit.setText(credit == null ? "" : credit);
+        wallpaperCredit.setVisibility(credit == null ? View.GONE : View.VISIBLE);
+    }
+
+    private void playSeasonShower() {
+        if (isFinishing() || isDestroyed() || season == null) return;
+        SeasonShowerView shower = new SeasonShowerView(this);
+        root.addView(shower, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        shower.play(season.effect, 6500, () -> root.removeView(shower));
     }
 
     private static int liftTowardsWhite(int argb, float amount) {

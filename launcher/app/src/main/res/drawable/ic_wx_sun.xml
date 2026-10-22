@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Weather card: clear, day. Generated; the colours are part of the icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFC93C"
+        android:pathData="M7,12a5,5 0 1 0 10,0a5,5 0 1 0 -10,0zM18.6,12.75L20.6,12.75L20.6,11.25L18.6,11.25zM16.14,17.2L17.55,18.61L18.61,17.55L17.2,16.14zM11.25,18.6L11.25,20.6L12.75,20.6L12.75,18.6zM6.8,16.14L5.39,17.55L6.45,18.61L7.86,17.2zM5.4,11.25L3.4,11.25L3.4,12.75L5.4,12.75zM7.86,6.8L6.45,5.39L5.39,6.45L6.8,7.86zM12.75,5.4L12.75,3.4L11.25,3.4L11.25,5.4zM17.2,7.86L18.61,6.45L17.55,5.39L16.14,6.8z" />
+</vector>

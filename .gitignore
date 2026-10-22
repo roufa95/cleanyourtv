@@ -19,3 +19,8 @@ traces/
 *.aab
 launcher/hs_err_pid*.log
 launcher/replay_pid*.log
+
+# Local screenshots taken with tools/tv.py --screenshot, and editor settings.
+shots/
+.vscode/
+.idea/

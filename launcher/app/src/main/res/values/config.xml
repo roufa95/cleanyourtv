@@ -17,10 +17,11 @@
 
     <!-- Apps pinned to the dock row at the bottom, in this order. Missing apps are skipped. -->
     <string-array name="dock_apps">
+        <item>com.stremio.one</item>
+        <item>org.smarttube.stable</item>
         <item>com.netflix.ninja</item>
         <item>com.amazon.amazonvideo.livingroom</item>
-        <item>com.google.android.youtube.tv</item>
-        <item>in.startv.hotstar</item>
+        <item>com.android.vending</item>
     </string-array>
     <!-- With fewer dock_apps than columns (or a dock app that is not installed), the free dock slots take
          the first grid apps, so the dock never shows a gap. false leaves them empty (#162); a theme can
@@ -29,12 +30,12 @@
 
     <!-- Apps never shown as tiles (e.g. the Live TV app, which the Inputs menu already covers). -->
     <string-array name="hidden_apps">
-        <item>com.mediatek.wwtv.tvcenter</item>
-        <item>com.mitv.gallery</item>
+        <item>com.tcl.tv</item>
+        <item>com.tcl.suspension</item>
     </string-array>
 
     <!-- The TV's Live TV / tuner app, offered at the end of the Inputs menu. Leave empty to omit. -->
-    <string name="live_tv_package" translatable="false">com.mediatek.wwtv.tvcenter</string>
+    <string name="live_tv_package" translatable="false">com.tcl.tv</string>
 
     <!-- Open the Live TV app above the first time Home comes up after the TV is switched on, for sets that are
          mostly used for broadcast TV. Once per boot: Home after that stays Home. Can also be set with
@@ -125,11 +126,12 @@
          a temporary `Log.d` in the helper's `onKeyEvent`: `getKeyCode()`, `getScanCode()`, `getDeviceId()`, read
          after a HOME_KEY_SERVICE=1 rebuild. Leave empty to omit. -->
     <integer-array name="settings_key_keycodes">
+        <item>83</item>
     </integer-array>
     <!-- What those Settings buttons open: false, the TV's Settings; true, a small glass panel at the top right
          with TV settings, Display, Network, Apps (re-enable an app) and Launcher settings, over whatever is on screen.
          Both keys can also be set from a theme's config.json ("settings_key_keycodes": [83]). -->
-    <bool name="settings_key_panel">false</bool>
+    <bool name="settings_key_panel">true</bool>
 
     <!-- A force stop of the launcher (Settings, a cleaner app, am force-stop) takes HomeKeyService and InputKeyService
          off the enabled list. true: Home puts the helpers that were running back when it starts; one turned off in
@@ -166,6 +168,9 @@
          still opens on a tap; "hold:scan:490:..." works for scancodes. A key with only a hold entry does nothing
          on a tap. A listed app that is not installed leaves the button doing nothing. Leave empty to omit. -->
     <string-array name="app_keys" translatable="false">
+        <item>4062:com.netflix.ninja</item>
+        <item>4099:com.amazon.amazonvideo.livingroom</item>
+        <item>4065:org.smarttube.stable</item>
     </string-array>
 
     <!-- Package of the stock launcher, for TVs whose firmware turns it back on after it was disabled. XGIMI's
@@ -184,6 +189,41 @@
          VPN you use. Empty: the pill opens Wi-Fi settings. The green VPN badge shows for any VPN either way;
          with an app set here, a red "VPN off" badge also shows while no VPN is up. -->
     <string name="vpn_app" translatable="false"></string>
+    <!-- Weather card on the right of Home, iPad widget style: the temperature now, today's high and low, the next
+         hours, and a footer with sunrise and sunset and the next holiday. The forecast comes from Open-Meteo
+         (free, no key) for latitude/longitude above, downloaded at most every 90 minutes while Home is open;
+         sunrise and sunset are computed on the TV. weather_place is the name shown on the card. -->
+    <bool name="weather">true</bool>
+    <string name="weather_place" translatable="false">Belvaux</string>
+    <!-- The country for the footer's next public holiday and school holidays (OpenHolidays API, ISO code such as
+         LU, DE, FR; refreshed weekly). Empty: no holidays in the footer. -->
+    <string name="holidays_country" translatable="false">LU</string>
+
+    <!-- Holiday theme (see Season): a greeting, a focus-glow colour and a short effect the first time Home shows
+         each day, for Halloween (from 15 October), Christmas, New Year, Fuesend, Ramadan and Eid. "auto"
+         follows the date, "off" never shows one, and a name (christmas, ramadan, new_year...) forces it.
+         A theme's config.json can set "season" too. A theme's festival takes precedence. -->
+    <string name="season" translatable="false">auto</string>
+
+    <!-- A Stats pill first in the top bar: memory and storage, data used today, this month and over the last
+         seven days, and an energy estimate. The TV has no power meter: energy is screen-on time times tv_watts
+         (the rating on the TV's label, about 100 W for a 55-inch LED set), and its cost is that times
+         energy_price per kWh, shown with energy_currency. Data and screen time need usage access (see README). -->
+    <bool name="stats_button">true</bool>
+    <integer name="tv_watts">100</integer>
+    <string name="energy_price" translatable="false">0.22</string>
+    <string name="energy_currency" translatable="false">€</string>
+
+    <!-- Bin collection calendar for a commune in Luxembourg, shown under the clock: the next collection day
+         ("Tomorrow · Household + Bio") and the few after it. Once a week the launcher downloads the national
+         open-data calendar (data.public.lu, CC0) and keeps only this place's dates; that download is its only
+         network use, and it never runs while waste_commune is empty. The commune as data.public.lu spells it
+         (Sanem, Esch-sur-Alzette, Luxembourg). waste_locality and waste_street add the collections listed for
+         one locality or street only (SuperDrecksKëscht stops, for one): Belvaux, "Rue de la Poste". A theme's
+         config.json can set the same three keys. -->
+    <string name="waste_commune" translatable="false">Sanem</string>
+    <string name="waste_locality" translatable="false"></string>
+    <string name="waste_street" translatable="false"></string>
     <!-- The dock as its own row: a lighter band, no names under the tiles, parked low on the screen with the top
          shelf above it. false makes the dock apps simply the first tiles of one plain grid (still in dock_apps
          order, no empty slots), with names under every tile and the glow behind every focused tile. -->
@@ -202,6 +242,9 @@
          so its corners are concentric with the tiles' and the spacing reads even. false (the default) keeps the fixed
          14dp above and below, up to 22dp at the sides and 26dp corners. Can also be set with "dock_even_padding": true in a theme's config.json. -->
     <bool name="dock_even_padding">false</bool>
+    <!-- The lighter rounded band behind the dock row. false keeps the dock where it is, with the same spacing,
+         and lets its tiles sit straight on the wallpaper. A theme can set "dock_band": false. -->
+    <bool name="dock_band">false</bool>
     <!-- A reorder button (two arrows) in the top bar. Off by default: reordering is also in the Settings
          button's long-press menu, so it needs no extra button on screen. -->
     <bool name="reorder_button">false</bool>
@@ -243,11 +286,11 @@
 
     <!-- The focused dock app's name in large type above the dock. false keeps only the glow, which leaves room
          for bigger tiles when rows_below_dock is 2 or 3. -->
-    <bool name="dock_title">true</bool>
+    <bool name="dock_title">false</bool>
 
     <!-- Tiles per row in the grid; the dock always has this many slots. Tiles are 180dp wide at 4 columns and
          shrink to fit from 5 up (about 144dp at 5, 117dp at 6 on a 1080p TV). -->
-    <integer name="columns">4</integer>
+    <integer name="columns">5</integer>
 
     <!-- Basic motion is on; advanced effects are opt-in in the launcher's own Settings screen. -->
     <bool name="animations">true</bool>
@@ -297,8 +340,8 @@
     <!-- Where the TV is, in decimal degrees, so the sky's sunrise and sunset glows follow the real sun
          (computed on the TV, no network). Empty: a fixed temperate day, sunset glow around 19:00.
          Vilnius: 54.69 and 25.28. -->
-    <string name="latitude" translatable="false"></string>
-    <string name="longitude" translatable="false"></string>
+    <string name="latitude" translatable="false">49.505</string>
+    <string name="longitude" translatable="false">5.937</string>
 
     <!-- Cinematic top shelf: the focused dock app's artwork, softened, fills the top of the screen in its
          colour; the shelf gets a larger name, a "Last opened" line (from the apps Home opened) and dock position

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Stats pill's panel (StatsActivity): the quick settings' glass panel, under the top bar on the right,
+     filled in code with memory, data used and the energy estimate. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrim"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/stats"
+        android:layout_width="360dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="105dp"
+        android:layout_marginEnd="56dp"
+        android:orientation="vertical"
+        android:background="@drawable/glass_panel"
+        android:paddingStart="22dp"
+        android:paddingEnd="22dp"
+        android:paddingTop="18dp"
+        android:paddingBottom="16dp"
+        android:elevation="12dp" />
+</FrameLayout>

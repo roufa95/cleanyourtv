@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Weather card: partly cloudy, day. Generated; the colours are part of the icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFC93C"
+        android:pathData="M4.9,8a3.6,3.6 0 1 0 7.2,0a3.6,3.6 0 1 0 -7.2,0zM13.7,8.75L15.7,8.75L15.7,7.25L13.7,7.25zM11.65,12.21L13.06,13.62L14.12,12.56L12.71,11.15zM7.75,13.2L7.75,15.2L9.25,15.2L9.25,13.2zM4.29,11.15L2.88,12.56L3.94,13.62L5.35,12.21zM3.3,7.25L1.3,7.25L1.3,8.75L3.3,8.75zM5.35,3.79L3.94,2.38L2.88,3.44L4.29,4.85zM9.25,2.8L9.25,0.8L7.75,0.8L7.75,2.8zM12.71,4.85L14.12,3.44L13.06,2.38L11.65,3.79z" />
+    <path android:fillColor="#FFF2F4F8"
+        android:pathData="M6.28,16.43a3.4,3.4 0 1 0 6.8,0a3.4,3.4 0 1 0 -6.8,0zM9.25,13.45a4.67,4.67 0 1 0 9.35,0a4.67,4.67 0 1 0 -9.35,0zM13.93,16a3.82,3.82 0 1 0 7.65,0a3.82,3.82 0 1 0 -7.65,0zM9.68,15.57V19.82H17.75V15.57z" />
+</vector>

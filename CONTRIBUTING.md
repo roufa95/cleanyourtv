@@ -42,6 +42,11 @@ is reversible from the TV's own settings if the tools are gone.
 The launcher lives in `launcher/` and is deliberately small: plain Java, AndroidX RecyclerView and
 DynamicAnimation, no Kotlin, no Compose, no network. It targets TVs with 1 GB of RAM, so:
 
+- Code is grouped by feature under `com.gathin.tvhome`: `home` (grid, dock, order, library), `cards`,
+  `weather`, `waste`, `calendar` (holidays, seasons, festivals, race weekends), `decor`, `wallpaper`,
+  `stats`, `clock` and `util` (config, remote keys, motion, fonts). Activities, services, the screensaver
+  and the theme provider stay in the root package, because their component names are used by `tools/` and
+  by TVs that already have them set up; don't move or rename them.
 - No blur, no video backgrounds, no polling, no background services.
 - Anything that depends on a specific TV goes in `app/src/main/res/values/config.xml`, not in code.
 - Keep D-pad navigation deterministic. Test Up/Down/Left/Right from every edge.

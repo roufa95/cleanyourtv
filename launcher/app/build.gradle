@@ -45,4 +45,6 @@ dependencies {
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
     // Test only (never in the APK): plain JVM tests for the module card validators, src/test.
     testImplementation 'junit:junit:4.13.2'
+    // Android's org.json is a stub on the JVM; the real one lets the weather and holiday parsers run in tests.
+    testImplementation 'org.json:json:20240303'
 }

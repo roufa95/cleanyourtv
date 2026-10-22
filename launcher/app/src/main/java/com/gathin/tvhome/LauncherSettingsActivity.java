@@ -12,6 +12,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.gathin.tvhome.util.Config;
+import com.gathin.tvhome.util.SystemSettings;
+import com.gathin.tvhome.wallpaper.WallpaperRotation;
 import java.io.File;
 import java.util.List;
 

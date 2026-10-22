@@ -6,6 +6,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 
+import com.gathin.tvhome.util.Config;
+import com.gathin.tvhome.wallpaper.ThemeFiles;
 import java.io.File;
 import java.io.FileNotFoundException;
 

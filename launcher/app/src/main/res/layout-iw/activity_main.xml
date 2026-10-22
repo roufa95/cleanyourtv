@@ -8,7 +8,7 @@
 
     <!-- Time-of-day backdrop, drawn once a minute (config.xml sky_intensity; 0 keeps it hidden).
          Keep in step with layout/activity_main.xml: every view there must exist here too. -->
-    <com.gathin.tvhome.SkyView
+    <com.gathin.tvhome.weather.SkyView
         android:id="@+id/sky"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -92,6 +92,259 @@
             android:textSize="12sp"
             android:fontFamily="@string/font_medium"
             android:letterSpacing="0.12" />
+    </LinearLayout>
+
+
+
+
+
+
+
+
+
+
+    <!-- Home cards, mirrored: three of one height in a row under the clock (60dp margins, 21dp gaps).
+         Bin calendar (config.xml waste_commune, see WasteCalendar), the same place as the race panel, which
+         takes the space while a race weekend is on. Updated once a minute with the clock, never animated. -->
+    <LinearLayout
+        android:id="@+id/wastePanel"
+        android:layout_width="310dp"
+        android:layout_gravity="top|right"
+        android:layout_marginEnd="60dp"
+        android:layout_height="164dp"
+        android:layout_marginTop="140dp"
+        android:orientation="vertical"
+        android:gravity="right"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        android:background="@drawable/waste_panel"
+        android:paddingStart="20dp"
+        android:paddingEnd="18dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="14dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/wasteKicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="@font/outfit_medium"
+                android:letterSpacing="0.22"
+                android:textAllCaps="true" />
+
+            <View
+                android:layout_width="3dp"
+                android:layout_height="13dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/waste_bar" />
+        </LinearLayout>
+
+        <!-- The evening before a collection (see WasteCalendar.tonight): the amber reminder and the bins to put out. -->
+        <TextView
+            android:id="@+id/wasteAlert"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="right"
+            android:singleLine="true"
+            android:textColor="#FFFAC775"
+            android:textSize="12sp"
+            android:fontFamily="@font/outfit_medium"
+            android:letterSpacing="0.15"
+            android:textAllCaps="true"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/wasteHeadline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="right"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="#FFFFFFFF"
+            android:textSize="22sp"
+            android:fontFamily="@font/outfit_light"
+            android:visibility="gone" />
+
+        <!-- One row per bin type: icon, name, next date, how far away; the rows are added in code. -->
+        <LinearLayout
+            android:id="@+id/wasteRows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical" />
+    </LinearLayout>
+
+    <!-- Weather today (config.xml weather, see Weather), iPad widget style. Its background follows the sky and
+         is set in code, for this card and the next one; the hourly cells are added in code. -->
+    <LinearLayout
+        android:id="@+id/weatherCard"
+        android:layout_width="220dp"
+        android:layout_gravity="top|right"
+        android:layout_marginEnd="391dp"
+        android:layout_height="164dp"
+        android:layout_marginTop="140dp"
+        android:orientation="vertical"
+        android:gravity="right"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        android:paddingStart="18dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/weatherPlace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/outfit_medium" />
+
+                <TextView
+                    android:id="@+id/weatherTemp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:singleLine="true"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="38sp"
+                    android:fontFamily="@font/outfit_light"
+                    android:includeFontPadding="false" />
+
+                <TextView
+                    android:id="@+id/weatherSky"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:singleLine="true"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/outfit_medium" />
+
+                <TextView
+                    android:id="@+id/weatherHighLow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/outfit_medium" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/weatherHours"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:orientation="horizontal" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#26FFFFFF" />
+
+        <TextView
+            android:id="@+id/weatherFooter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="right"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="#D9FFFFFF"
+            android:textSize="11sp"
+            android:fontFamily="@font/outfit_medium"
+            android:letterSpacing="0.04" />
+    </LinearLayout>
+
+    <!-- The next days (config.xml weather): one row each, then the holiday under way or coming up. -->
+    <LinearLayout
+        android:id="@+id/forecastCard"
+        android:layout_width="268dp"
+        android:layout_gravity="top|left"
+        android:layout_marginStart="60dp"
+        android:layout_height="164dp"
+        android:layout_marginTop="140dp"
+        android:orientation="vertical"
+        android:gravity="right"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        android:paddingStart="20dp"
+        android:paddingEnd="18dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:id="@+id/forecastKicker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:textColor="#B3FFFFFF"
+            android:textSize="12sp"
+            android:fontFamily="@font/outfit_medium"
+            android:letterSpacing="0.22"
+            android:textAllCaps="true" />
+
+        <LinearLayout
+            android:id="@+id/forecastDays"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#26FFFFFF" />
+
+        <TextView
+            android:id="@+id/forecastFooter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="right"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="#D9FFFFFF"
+            android:textSize="11sp"
+            android:fontFamily="@font/outfit_medium"
+            android:letterSpacing="0.04" />
     </LinearLayout>
 
     <!-- Cinematic top shelf: darkens the edge behind the shelf and the lower half, so the text and the
@@ -354,6 +607,13 @@
                     android:text="@string/inputs"
                     android:drawableStart="@drawable/ic_input"
                     android:nextFocusDown="@+id/grid" />
+
+                <TextView
+                    android:id="@+id/btnStats"
+                    style="@style/TopButton"
+                    android:text="@string/stats"
+                    android:drawableStart="@drawable/ic_stats"
+                    android:nextFocusDown="@+id/grid" />
             </LinearLayout>
         </RelativeLayout>
 
@@ -381,10 +641,24 @@
     </LinearLayout>
 
     <!-- The single floating glass highlight that springs between tiles. -->
-    <com.gathin.tvhome.GlassView
+    <com.gathin.tvhome.util.GlassView
         android:id="@+id/glass"
         android:layout_width="10dp"
         android:layout_height="10dp"
         android:alpha="0"
         android:importantForAccessibility="no" />
+
+    <!-- The photographer's credit while a downloaded photo (see PhotoFetch) is the wallpaper. -->
+    <TextView
+        android:id="@+id/wallpaperCredit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|left"
+        android:layout_margin="10dp"
+        android:textColor="#80FFFFFF"
+        android:textSize="10sp"
+        android:fontFamily="@font/outfit_medium"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
 </FrameLayout>

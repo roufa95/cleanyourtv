@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Weather card: fog. Generated; the colours are part of the icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFB9C3D0"
+        android:pathData="M4.78,11.43a3.4,3.4 0 1 0 6.8,0a3.4,3.4 0 1 0 -6.8,0zM7.75,8.45a4.67,4.67 0 1 0 9.35,0a4.67,4.67 0 1 0 -9.35,0zM12.43,11a3.82,3.82 0 1 0 7.65,0a3.82,3.82 0 1 0 -7.65,0zM8.18,10.57V14.82H16.25V10.57z" />
+    <path android:fillColor="#00000000" android:strokeColor="#FFB8C2CF" android:strokeWidth="1.6" android:strokeLineCap="round"
+        android:pathData="M4,17.5H20M6,20.5H18" />
+</vector>
