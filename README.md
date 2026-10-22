@@ -73,6 +73,7 @@ A home screen that looks like an Apple TV and gets out of the way:
 | **One floating glass highlight** | Springs from tile to tile. The focused tile lifts and shows its name. |
 | **Three frosted buttons** | Inputs (HDMI ports under the names you gave them in the TV's settings, AV, Live TV), Wi-Fi or Ethernet with the network name, Settings. |
 | **A greeting, a thin clock and the date** | In [Outfit](https://fonts.google.com/specimen/Outfit), and a matching Clock screensaver. Set `show_stats` in config or a theme for one line under the clock: CPU, free memory and free storage. It stays off unless you turn it on, and it refreshes only while Home is on screen. |
+| **Weather, bins and seasons** | Optional cards beside the clock: the weather now with the next hours and a 4-day forecast, the next public and school holidays, and the next bin collection for a commune in Luxembourg with a "put it out tonight" reminder. Holiday seasons (Halloween, Christmas, New Year, Carnival, Ramadan) bring a greeting, a glow colour and their own wallpapers. All off until you set them. |
 | **Themes and module cards** | Themes change colours, wallpaper, dock and columns without a rebuild, and module cards let other apps plug a tile in, only with your say-so. |
 
 And a TV that stops working against you: no sponsored rows, no "Discover" nags, no analytics
@@ -385,7 +386,7 @@ tools/theme.sh themes/aurora                                 # push a theme; --r
 | [`tools/trace.py`](tools/trace.py), [`trace_report.py`](tools/trace_report.py) | Records Perfetto traces of the launcher (return to Home, cold start, D-pad) and reports where its time goes, per run and before against after. Optional: needs [`requirements-perf.txt`](tools/requirements-perf.txt). [Guide](tools/trace.md). |
 | [`tools/flamechart.py`](tools/flamechart.py) | Draws a before/after flame chart from those traces, for a pull request: one lane per thread on a shared time scale, the work a change targets in magenta with its total. Optional, like the trace tools. [Guide](tools/flamechart.md). |
 | [`tools/race_calendar.py`](tools/race_calendar.py) | Writes this season's F1 calendar into a theme for race-weekend mode, from the free Jolpica API. |
-| [`launcher/build-and-install.sh`](launcher/build-and-install.sh) | Builds a shrunk release (about 471 KB), installs it, switches Home, and rolls back if Home does not land on it. |
+| [`launcher/build-and-install.sh`](launcher/build-and-install.sh) | Builds a shrunk release (about 547 KB), installs it, switches Home, and rolls back if Home does not land on it. |
 
 The scripts never leave the TV without a Home app: they only disable a stock launcher they recognise,
 and skip the Home app in a list until another launcher answers HOME. Details below.
@@ -456,8 +457,10 @@ apps), which is why the report names that loss per package instead of calling it
 
 ## The launcher
 
-A small native home screen for Android TV: **about 471 KB**, plain Java, built for TVs with 1 GB of RAM.
-No blur, no video, no network permission, no background services.
+A small native home screen for Android TV: **about 547 KB**, plain Java, built for TVs with 1 GB of RAM.
+No blur, no video, no background services. The launcher goes online only for the cards you turn on: the
+weather and holidays (Open-Meteo, OpenHolidays), the bin calendar (data.public.lu, weekly) and the daily
+photo (Unsplash, with your own key). With all of them off it makes no network request.
 
 The **TV** needs Android 8.0 (API 26) or newer: `minSdk` is a compile-time floor in
 [`launcher/app/build.gradle`](launcher/app/build.gradle), and the install script asks the TV for
@@ -468,7 +471,12 @@ The **TV** needs Android 8.0 (API 26) or newer: `minSdk` is a compile-time floor
 |---|---|
 | **Configure** | Dock order, hidden apps, Live TV app, 4 to 7 tiles per row, reduced motion. All in [`config.xml`](launcher/app/src/main/res/values/config.xml) |
 | **Settings on the TV** | Hold OK on Settings for launcher settings. Optional `launcher_settings_button` makes a normal click open them directly; TV settings remain on the settings page and their app tile. |
-| **Themes** | Background, wallpaper and layout from a `config.json` pushed over Wi-Fi, no rebuild. Five ship in [`themes/`](themes/) |
+| **Themes** | Background, wallpaper and layout from a `config.json` pushed over Wi-Fi, no rebuild. Seven ship in [`themes/`](themes/), `wizarding-night` among them |
+| **Weather** | Optional (`weather`, `latitude`, `longitude`, `weather_place`): a card with the temperature, today's high and low and the next hours, plus a 4-day forecast card. Open-Meteo, no key, at most every 90 minutes while Home is open. `holidays_country` adds the next public and school holiday |
+| **Bin calendar** | Optional (`waste_commune`, `waste_locality`, `waste_street`): the next collections for a commune in Luxembourg, from the national open data, downloaded once a week |
+| **Seasons** | `season` (`auto`, `off` or a name such as `christmas`): a greeting, a glow colour and a short effect for Halloween, Christmas, New Year, Fuesend, Ramadan and Eid |
+| **Stats panel** | Optional (`stats_button`): memory and storage, data used today, this month and this week, and a screen-on energy estimate from `tv_watts` and `energy_price` |
+| **Daily photo** | Optional (`unsplash_key` in a theme): one dark landscape a day from Unsplash, matching the season, credited on screen |
 | **25 languages** | Follows the TV's language, with a fully mirrored right-to-left layout for Hebrew |
 | **App library** | Optional: browse every installed app and add or remove Home shortcuts. See [the app library guide](docs/app-library.md) |
 | **Tile menu** | Optional (`tile_menu`): hold OK on a tile for Move, Remove from Home and App info. Off, holding OK opens App info |
@@ -493,6 +501,12 @@ and `sdkmanager "platforms;android-34" "build-tools;34.0.0"`. On Linux the insta
 package, columns (tiles shrink from 5 up), rows under the dock, an optional VPN app for the network pill,
 and `reduced_motion` for TVs whose GPU cannot keep up. Themes set the same keys plus a background colour
 and a wallpaper.
+
+The Stats panel's data used and screen-on time need usage access, which is not a runtime permission:
+
+```bash
+tools/tv.py 'appops set com.gathin.tvhome GET_USAGE_STATS allow'
+```
 
 </details>
 
@@ -544,6 +558,8 @@ Pick "Clock" in the TV's screensaver settings, or over ADB:
 ```bash
 tools/tv.py 'settings put secure screensaver_components com.gathin.tvhome/.ClockDream; settings put secure screensaver_enabled 1'
 ```
+
+With the weather or bin cards on, the screensaver shows the weather and the bin reminder too.
 
 </details>
 

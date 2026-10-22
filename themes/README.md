@@ -20,6 +20,7 @@ powershell -ExecutionPolicy Bypass -File tools\theme.ps1 -TvHost 192.168.1.50 th
 | `glass/` | Dark navy wallpaper with soft teal and violet light, the cinematic top shelf, a frosted-glass dock, icon-only buttons and the focus glow in the app's colour, gliding without overshoot | <img src="glass/screenshot.jpg" width="320" alt="glass theme"> |
 | `scenes/` | 14 dark illustrated landscapes in `wallpapers/`, a new one every hour; drawn from code by `tools/scenes_wallpapers.py` | <img src="scenes/screenshot.jpg" width="320" alt="scenes theme"> |
 | `six-columns/` | Six smaller tiles per row and one grid row visible under the dock | <img src="six-columns/screenshot.jpg" width="320" alt="six-columns theme"> |
+| `wizarding-night/` | Six dark castle, candle-hall, forest, library, night-train and owl wallpapers, shuffled every hour, with seasonal sets for Halloween, Christmas, New Year, Carnival and Ramadan | <img src="wizarding-night/screenshot.jpg" width="320" alt="wizarding-night theme"> |
 
 Every theme folder has a `screenshot.jpg` of Home with that theme on a real TV. `tools/theme.sh` never
 pushes it; it is only here so you can see a theme before you try it.
@@ -101,6 +102,15 @@ is ignored, and a file that doesn't parse is ignored as a whole, so a theme can 
 | `dock_even_padding` | bool | The dock band's padding equals the gap between its tiles on all four sides, as far as the grid's edges leave room (`false` by default) |
 | `dock_glass` | bool | The dock band as light frosted glass like the top bar's pills (`false` by default); suits `sky_intensity` or a wallpaper, where the solid band reads as a dark slab |
 | `ambient_glow` | bool | The glow behind the dock in the focused app's colour (`true` by default); `false` keeps only `background_color` or the wallpaper, e.g. for a calm photo background |
+| `dock_band` | bool | The lighter rounded band behind the dock row (`true` by default); `false` keeps the dock's place and spacing and sets its tiles straight on the wallpaper |
+| `weather` | bool | A weather card beside the clock (now, today's high and low, the next hours) and a 4-day forecast card, from Open-Meteo for `latitude` and `longitude`, at most every 90 minutes while Home is open (`false` by default) |
+| `weather_place` | string | The place name shown on the weather card |
+| `holidays_country` | string | ISO country code (`LU`, `DE`, `FR`) for the next public and school holiday in the weather card's footer, from the OpenHolidays API, weekly; empty for none |
+| `season` | string | Holiday theme: `auto` follows the date (Halloween from 15 October, Christmas, New Year, Fuesend, Ramadan, Eid), `off` never shows one, a name such as `christmas` forces it. A greeting, a glow colour and a short effect the first time Home shows each day; a festival takes precedence |
+| `waste_commune` | string | A commune in Luxembourg as data.public.lu spells it (`Sanem`, `Esch-sur-Alzette`): a bin card under the clock with the next collections, downloaded once a week; empty (default) never goes online |
+| `waste_locality` | string | Adds the collections listed for one locality only, e.g. `Belvaux` |
+| `waste_street` | string | Adds the collections listed for one street only, e.g. `Rue de la Poste` |
+| `unsplash_key` | string | Your own Unsplash Access Key: once a day Home saves one dark landscape photo matching the season, with the photographer's credit, and rotates the newest ones; empty (default) keeps the theme's own wallpapers |
 | `app_glow` | bool | The focus highlight glows in the focused app's colour on every tile, as `cinematic_home` does for the dock (`false` by default) |
 
 ## Wallpapers
