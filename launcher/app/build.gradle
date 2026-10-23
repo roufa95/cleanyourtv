@@ -13,6 +13,9 @@ android {
         targetSdk 34
         versionCode 7
         versionName '2.6'
+        // Package only English and French strings: the other translations stay in res/ but cost about
+        // 150 KB of resources.arsc. A language left out falls back to English.
+        resourceConfigurations += ['en', 'fr']
     }
 
     buildTypes {
