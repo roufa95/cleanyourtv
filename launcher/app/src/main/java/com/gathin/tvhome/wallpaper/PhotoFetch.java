@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.gathin.tvhome.calendar.Season;
 import com.gathin.tvhome.util.Config;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -27,16 +28,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * The daily background photo: once a day Home asks Unsplash for one dark landscape photo matching the season
- * (see Season; the rest of the year a moonlit castle, candles or a misty forest), saves it at screen size under
- * photos/<season> in the theme folder with the photographer's credit beside it, and keeps the newest {@link #KEEP}.
+ * The background photos: once a day Home asks Unsplash for {@link #PER_FETCH} dark landscape photos matching the
+ * season (see Season; the rest of the year a moonlit castle, candles or a misty forest), saves them at screen size
+ * under photos/<season> in the theme folder with the photographer's credit beside each, and keeps the newest
+ * {@link #KEEP}. While a season has fewer than {@link #KEEP}, it asks again every {@link #RETRY_MS} to fill up.
  * Config then rotates those photos, and falls back to the theme's drawn scenes while there are none (no key, or
  * offline). Needs the owner's own Unsplash Access Key (a theme's "unsplash_key").
  */
 public final class PhotoFetch {
 
     private static final String TAG = "PhotoFetch";
-    static final int KEEP = 6;
+    static final int KEEP = 15;
+    static final int PER_FETCH = 3;
     private static final long RETRY_MS = 3L * 60 * 60 * 1000;
     private static final ExecutorService worker = Executors.newSingleThreadExecutor();
     private static boolean running;
@@ -54,11 +57,13 @@ public final class PhotoFetch {
         String[] q;
         if (season == null) {
             q = new String[]{"castle night", "candles dark", "misty forest night", "old library", "moon night sky",
-                    "steam train night"};
+                    "steam train night", "starry night mountains", "dark lake moonlight", "foggy castle", "aurora night"};
         } else {
             switch (season) {
-                case HALLOWEEN: q = new String[]{"halloween night", "haunted house night", "jack o lantern dark"}; break;
-                case CHRISTMAS: q = new String[]{"christmas lights night", "snowy village night", "christmas tree dark"}; break;
+                case HALLOWEEN: q = new String[]{"halloween night", "haunted house night", "jack o lantern dark", "spooky forest night",
+                        "full moon bats", "abandoned mansion fog"}; break;
+                case CHRISTMAS: q = new String[]{"christmas lights night", "snowy village night", "christmas tree dark",
+                        "snowy cabin night", "christmas market night"}; break;
                 case NEW_YEAR: q = new String[]{"fireworks night city", "new year fireworks", "sparklers night"}; break;
                 case CARNIVAL: q = new String[]{"carnival lights night", "confetti dark", "venetian mask"}; break;
                 case RAMADAN: q = new String[]{"ramadan lantern", "crescent moon mosque night", "lanterns night"}; break;
@@ -86,7 +91,7 @@ public final class PhotoFetch {
         SharedPreferences p = app.getSharedPreferences("photos", Context.MODE_PRIVATE);
         String folder = folder(season);
         LocalDate today = LocalDate.now();
-        if (p.getLong("day_" + folder, -1) == today.toEpochDay()) return;
+        if (p.getLong("day_" + folder, -1) == today.toEpochDay() && count(new File(new File(dir, "photos"), folder)) >= KEEP) return;
         if (System.currentTimeMillis() - p.getLong("tried_" + folder, 0) < RETRY_MS) return;
         synchronized (PhotoFetch.class) {
             if (running) return;
@@ -100,36 +105,13 @@ public final class PhotoFetch {
             try {
                 File out = new File(new File(dir, "photos"), folder);
                 if (!out.isDirectory() && !out.mkdirs()) throw new IOException("cannot create " + out);
-                JSONObject photo = new JSONObject(new String(get("https://api.unsplash.com/photos/random?orientation=landscape"
-                        + "&content_filter=high&query=" + URLEncoder.encode(query(season, today), "UTF-8"), key, 200_000),
+                JSONArray photos = new JSONArray(new String(get("https://api.unsplash.com/photos/random?orientation=landscape"
+                        + "&content_filter=high&count=" + PER_FETCH + "&query="
+                        + URLEncoder.encode(query(season, today.plusDays(count(out))), "UTF-8"), key, 600_000),
                         StandardCharsets.UTF_8));
-                String id = photo.getString("id").replaceAll("[^A-Za-z0-9_-]", "");
-                String raw = photo.getJSONObject("urls").getString("raw");
-                byte[] jpeg = get(raw + (raw.contains("?") ? "&" : "?") + "w=" + width + "&h=" + height
-                        + "&fit=crop&crop=entropy&fm=jpg&q=75", null, 6_000_000);
-                File image = new File(out, today.toString().replace("-", "") + "-" + id + ".jpg");
-                File tmp = new File(out, image.getName() + ".tmp");
-                try (OutputStream o = new FileOutputStream(tmp)) {
-                    o.write(jpeg);
-                }
-                if (!tmp.renameTo(image)) throw new IOException("rename failed");
-                JSONObject user = photo.optJSONObject("user");
-                String name = user == null ? "" : user.optString("name", "").trim();
-                try (OutputStream o = new FileOutputStream(image.getPath() + ".credit")) {
-                    o.write(("Photo: " + (name.isEmpty() ? "Unsplash" : name + " / Unsplash")).getBytes(StandardCharsets.UTF_8));
-                }
-                // Unsplash's API guidelines: report each download through download_location.
-                JSONObject links = photo.optJSONObject("links");
-                if (links != null && links.has("download_location")) {
-                    try {
-                        get(links.getString("download_location"), key, 50_000);
-                    } catch (IOException ignored) {
-                        // The photo is saved either way.
-                    }
-                }
+                for (int i = 0; i < photos.length(); i++) save(photos.getJSONObject(i), out, today, key, width, height);
                 prune(out);
                 p.edit().putLong("day_" + folder, today.toEpochDay()).apply();
-                Log.i(TAG, folder + ": " + image.getName() + " (" + jpeg.length / 1024 + " KB)");
                 main.post(done);
             } catch (Exception e) {
                 Log.w(TAG, folder + ": " + e);
@@ -139,6 +121,41 @@ public final class PhotoFetch {
                 }
             }
         });
+    }
+
+    private static int count(File dir) {
+        String[] names = dir.list((d, n) -> n.endsWith(".jpg"));
+        return names == null ? 0 : names.length;
+    }
+
+    /** Downloads one photo of the API's answer at screen size, with its credit, and reports the download. */
+    private static void save(JSONObject photo, File out, LocalDate today, String key, int width, int height)
+            throws Exception {
+        String id = photo.getString("id").replaceAll("[^A-Za-z0-9_-]", "");
+        String raw = photo.getJSONObject("urls").getString("raw");
+        byte[] jpeg = get(raw + (raw.contains("?") ? "&" : "?") + "w=" + width + "&h=" + height
+                + "&fit=crop&crop=entropy&fm=jpg&q=75", null, 6_000_000);
+        File image = new File(out, today.toString().replace("-", "") + "-" + id + ".jpg");
+        File tmp = new File(out, image.getName() + ".tmp");
+        try (OutputStream o = new FileOutputStream(tmp)) {
+            o.write(jpeg);
+        }
+        if (!tmp.renameTo(image)) throw new IOException("rename failed");
+        JSONObject user = photo.optJSONObject("user");
+        String name = user == null ? "" : user.optString("name", "").trim();
+        try (OutputStream o = new FileOutputStream(image.getPath() + ".credit")) {
+            o.write(("Photo: " + (name.isEmpty() ? "Unsplash" : name + " / Unsplash")).getBytes(StandardCharsets.UTF_8));
+        }
+        // Unsplash's API guidelines: report each download through download_location.
+        JSONObject links = photo.optJSONObject("links");
+        if (links != null && links.has("download_location")) {
+            try {
+                get(links.getString("download_location"), key, 50_000);
+            } catch (IOException ignored) {
+                // The photo is saved either way.
+            }
+        }
+        Log.i(TAG, out.getName() + ": " + image.getName() + " (" + jpeg.length / 1024 + " KB)");
     }
 
     /** Keeps the newest {@link #KEEP} photos (their names start with the date) and their credits. */

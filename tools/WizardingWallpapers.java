@@ -779,7 +779,7 @@ public class WizardingWallpapers {
     }
 
     static void pumpkin(Graphics2D g, int cx, int cy, double s) {
-        glow(g, cx, cy, 120 * s, new Color(255, 140, 40), 0.25f);
+        glow(g, cx, cy, 90 * s, new Color(255, 140, 40), 0.1f);
         Color[] ribs = {new Color(0xB84E0C), new Color(0xD9650F), new Color(0xEE7A1E)};
         double[][] lobes = {{-34, 26}, {34, 26}, {-18, 30}, {18, 30}, {0, 32}};
         for (int i = 0; i < lobes.length; i++) {
@@ -790,7 +790,7 @@ public class WizardingWallpapers {
         g.fill(new Ellipse2D.Double(cx - 22 * s, cy - 26 * s, 10 * s, 28 * s));
         g.setColor(new Color(0x4A6B2A));
         g.fill(new RoundRectangle2D.Double(cx - 4 * s, cy - 48 * s, 8 * s, 16 * s, 3 * s, 3 * s));
-        g.setColor(new Color(0xFFD25A));
+        g.setColor(new Color(0xC8862E));
         Path2D face = new Path2D.Double();
         face.moveTo(cx - 22 * s, cy - 6 * s);
         face.lineTo(cx - 10 * s, cy - 20 * s);

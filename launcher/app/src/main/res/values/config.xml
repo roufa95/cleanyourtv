@@ -19,7 +19,7 @@
     <string-array name="dock_apps">
         <item>com.stremio.one</item>
         <item>org.smarttube.stable</item>
-        <item>com.netflix.ninja</item>
+        <item>com.internet.tvbrowser</item>
         <item>com.amazon.amazonvideo.livingroom</item>
         <item>com.android.vending</item>
     </string-array>

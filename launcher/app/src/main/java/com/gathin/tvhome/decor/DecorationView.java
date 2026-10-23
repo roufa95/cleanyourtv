@@ -211,8 +211,9 @@ public final class DecorationView extends View {
         return true;
     }
 
+    /** A lantern's flicker, kept low so a pumpkin glows softly rather than lighting up the screen. */
     private static float flicker(float t, float phase) {
-        return 0.65f + 0.2f * (float) Math.sin(t * 7.3f + phase) + 0.12f * (float) Math.sin(t * 13.1f + phase * 2);
+        return 0.35f + 0.1f * (float) Math.sin(t * 7.3f + phase) + 0.06f * (float) Math.sin(t * 13.1f + phase * 2);
     }
 
     /** A spider on its thread under a card's bottom edge, bobbing slowly. */
@@ -428,7 +429,7 @@ public final class DecorationView extends View {
         p.setShader(null);
         p.setColor(0xFF4A6B2A);
         c.drawRoundRect(w * 0.46f, h * 0.06f, w * 0.54f, h * 0.26f, 2 * d, 2 * d, p);
-        p.setShader(new LinearGradient(0, cy - h * 0.2f, 0, cy + h * 0.25f, 0xFFFFF0A0, 0xFFFFA020, Shader.TileMode.CLAMP));
+        p.setShader(new LinearGradient(0, cy - h * 0.2f, 0, cy + h * 0.25f, 0xFFE0A050, 0xFFB85A14, Shader.TileMode.CLAMP));
         Path face = new Path();
         face.moveTo(w * 0.3f, cy - h * 0.05f);
         face.lineTo(w * 0.4f, cy - h * 0.2f);
